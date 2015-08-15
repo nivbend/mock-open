@@ -113,3 +113,64 @@ class TestOpenSingleFiles(unittest.TestCase):
         handle.write.assert_not_called()
         handle.read.assert_called_once_with()
         self.assertEquals("\n".join(contents), data)
+
+
+@patch("__builtin__.open", new_callable=MockOpen)
+class TestSideEffects(unittest.TestCase):
+    """Test setting the side_effect attribute in various situations."""
+    def test_error_on_open(self, mock_open):
+        """Simulate error openning file."""
+        mock_open.side_effect = IOError()
+
+        self.assertRaises(IOError, open, "/not/there", "r")
+
+    def test_error_on_read(self, mock_open):
+        """Simulate error when reading from file."""
+        mock_open.return_value.read.side_effect = IOError()
+
+        with open("/path/to/file", "w") as handle:
+            with self.assertRaises(IOError):
+                handle.read()
+
+    def test_error_on_write(self, mock_open):
+        """Simulate error when writing to file."""
+        mock_open.return_value.write.side_effect = IOError()
+
+        with open("/path/to/file", "r") as handle:
+            with self.assertRaises(IOError):
+                handle.write("text")
+
+    def test_hijack_read(self, mock_open):
+        """Replace the normal read() with a fake one.
+
+        Replacing the side_effect causes the file's inner state to remain
+        unchanged after the call to read().
+        """
+        mock_open.return_value.read.side_effect = lambda: "Hijacked!"
+
+        with open("/path/to/file", "w") as handle:
+            contents = handle.read()
+
+        self.assertEquals("Hijacked!", contents)
+        self.assertEquals(0, handle.tell())
+
+    def test_hijack_write(self, mock_open):
+        """Replace the normal write() with a fake one.
+
+        Replacing the side_effect causes the file's inner state to remain
+        unchanged after the call to write().
+        """
+        def fake_write(data):
+            contents[0] = data
+
+        # If we define contents as a 'simple' variable (just None, for example)
+        # the assignment inside fake_write() will assign to a local variable
+        # instead of the 'outer' contents variable.
+        contents = [None, ]
+        mock_open.return_value.write.side_effect = fake_write
+
+        with open("/path/to/file", "r") as handle:
+            handle.write("text")
+
+        self.assertEquals("text", contents[0])
+        self.assertEquals(0, handle.tell())

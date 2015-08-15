@@ -230,3 +230,16 @@ class TestSideEffects(unittest.TestCase):
 
         self.assertEquals("Some text", handle.read_data)
         self.assertTrue(sentinal[0])
+
+
+class TestAPI(unittest.TestCase):
+    """Test conformance to mock library's API."""
+    def test_read_data(self):
+        """Check passing of `read_data` to the constructor."""
+        mock_open = MockOpen(read_data="Data from the file")
+
+        with patch("__builtin__.open", mock_open):
+            with open("/path/to/file", "r") as handle:
+                contents = handle.read()
+
+        self.assertEquals("Data from the file", contents)

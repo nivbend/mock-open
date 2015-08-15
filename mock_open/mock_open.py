@@ -48,10 +48,10 @@ class FileLikeMock(NonCallableMock):
 
 
 class MockOpen(Mock):
-    def __init__(self, *args, **kws):
+    def __init__(self, read_data="", *args, **kws):
         kws.update({"spec": open, "name": open.__name__, })
         super(MockOpen, self).__init__(*args, **kws)
-        self.__read_data = ""
+        self.__read_data = read_data
 
     def __call__(self, path, mode="r", *args, **kws):
         child = super(MockOpen, self).__call__(path, mode, *args, **kws)

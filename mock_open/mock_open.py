@@ -24,6 +24,10 @@ class FileLikeMock(NonCallableMock):
     def closed(self):
         return self.__is_closed
 
+    @property
+    def read_data(self):
+        return self.__contents.getvalue()
+
     def __enter__(self):
         return self
 

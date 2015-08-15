@@ -1,6 +1,7 @@
 import unittest
 from mock import patch, call
 from mock_open import MockOpen
+from functools import wraps
 
 
 @patch("__builtin__.open", new_callable=MockOpen)
@@ -49,6 +50,7 @@ class TestOpenSingleFiles(unittest.TestCase):
         self.assertEquals(
             [call("some text\n"), call("More text!"), ],
             handle.write.mock_calls)
+        self.assertEquals("some text\nMore text!", handle.read_data)
         handle.close.assert_called_once_with()
 
     def test_read_as_context_manager(self, mock_open):
@@ -92,6 +94,7 @@ class TestOpenSingleFiles(unittest.TestCase):
         self.assertEquals(
             [call("some text\n"), call("More text!"), ],
             handle.write.mock_calls)
+        self.assertEquals("some text\nMore text!", handle.read_data)
         handle.close.assert_called_once_with()
 
     def test_set_contents(self, mock_open):
@@ -174,3 +177,56 @@ class TestSideEffects(unittest.TestCase):
 
         self.assertEquals("text", contents[0])
         self.assertEquals(0, handle.tell())
+
+    def test_wrap_read(self, mock_open):
+        """Wrap the normal read() function to add to regular operations.
+
+        This is a method of allowing the mock to behave normally while adding
+        our own code around operations.
+        """
+        def wrap_read(original_read):
+            original_side_effect = original_read.side_effect
+
+            @wraps(original_side_effect)
+            def wrapped_read(*args, **kws):
+                sentinal[0] = True
+                return original_side_effect(*args, **kws)
+
+            original_read.side_effect = wrapped_read
+
+        # Avoid uninitialized assignment (see test_hijack_write()).
+        sentinal = [False, ]
+        mock_open.read_data = "Some text"
+        wrap_read(mock_open.return_value.read)
+
+        with open("/path/to/file", "w") as handle:
+            contents = handle.read()
+
+        self.assertEquals("Some text", contents)
+        self.assertTrue(sentinal[0])
+
+    def test_wrap_write(self, mock_open):
+        """Wrap the normal write() function to add to regular operations.
+
+        This is a method of allowing the mock to behave normally while adding
+        our own code around operations.
+        """
+        def wrap_write(original_write):
+            original_side_effect = original_write.side_effect
+
+            @wraps(original_side_effect)
+            def wrapped_write(*args, **kws):
+                sentinal[0] = True
+                return original_side_effect(*args, **kws)
+
+            original_write.side_effect = wrapped_write
+
+        # Avoid uninitialized assignment (see test_hijack_write()).
+        sentinal = [False, ]
+        wrap_write(mock_open.return_value.write)
+
+        with open("/path/to/file", "w") as handle:
+            handle.write("Some text")
+
+        self.assertEquals("Some text", handle.read_data)
+        self.assertTrue(sentinal[0])

@@ -1,0 +1,4 @@
+# Byte-compiled files.
+*.py[co]
+
+build/

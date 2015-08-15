@@ -93,3 +93,23 @@ class TestOpenSingleFiles(unittest.TestCase):
             [call("some text\n"), call("More text!"), ],
             handle.write.mock_calls)
         handle.close.assert_called_once_with()
+
+    def test_set_contents(self, mock_open):
+        """Check setting file's contents before reading from it."""
+        contents = [
+            "This is the first line",
+            "This is the second",
+            "This is the third line",
+        ]
+
+        # We even allow adding contents to the file incrementally.
+        mock_open.read_data = "\n".join(contents[:-1])
+        mock_open.read_data += "\n" + contents[-1]
+
+        with open("/path/to/file", "r") as handle:
+            data = handle.read()
+
+        # Make sure the only call logged was to read().
+        handle.write.assert_not_called()
+        handle.read.assert_called_once_with()
+        self.assertEquals("\n".join(contents), data)

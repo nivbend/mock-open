@@ -7,11 +7,15 @@ except ImportError:
 
 class FileLikeMock(NonCallableMock):
     """Acts like a file object returned from open()."""
-    def __init__(self, *args, **kws):
+    def __init__(self, read_data="", *args, **kws):
         kws.update({"spec": file, })
         super(FileLikeMock, self).__init__(*args, **kws)
         self.__contents = StringIO()
         self.__is_closed = False
+
+        # Constructing a cStrinIO object with the input string would result
+        # in a read-only object, so we write the contents after construction.
+        self.__contents.write(read_data)
 
         # Set tell/read/write/etc side effects to defaults.
         self.reset_mock()
@@ -43,6 +47,7 @@ class MockOpen(Mock):
     def __init__(self, *args, **kws):
         kws.update({"spec": open, "name": open.__name__, })
         super(MockOpen, self).__init__(*args, **kws)
+        self.__read_data = ""
 
     def __call__(self, path, mode="r", *args, **kws):
         child = super(MockOpen, self).__call__(path, mode, *args, **kws)
@@ -51,5 +56,13 @@ class MockOpen(Mock):
         child.mode = mode
         return child
 
+    @property
+    def read_data(self):
+        return self.__read_data
+
+    @read_data.setter
+    def read_data(self, data):
+        self.__read_data = data
+
     def _get_child_mock(self, **kws):
-        return FileLikeMock(**kws)
+        return FileLikeMock(read_data=self.__read_data, **kws)

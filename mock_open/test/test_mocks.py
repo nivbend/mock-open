@@ -1,30 +1,36 @@
 """Test cases for the mocks module."""
 
+import sys
 import unittest
 from functools import wraps
 from mock import patch, call, NonCallableMock
 from ..mocks import MockOpen, FileLikeMock
 
+if sys.version_info >= (3, 0):
+    OPEN = "builtins.open"
+else:
+    OPEN = "__builtin__.open"
 
-@patch("__builtin__.open", new_callable=MockOpen)
+
+@patch(OPEN, new_callable=MockOpen)
 class TestOpenSingleFiles(unittest.TestCase):
     """Test the MockOpen and FileLikeMock classes for single file usage."""
     def test_read(self, mock_open):
         """Check effects of reading from an empty file."""
         handle = open("/path/to/file", "r")
         self.assertFalse(handle.closed)
-        self.assertEquals("/path/to/file", handle.name)
-        self.assertEquals("r", handle.mode)
-        self.assertEquals(0, handle.tell())
+        self.assertEqual("/path/to/file", handle.name)
+        self.assertEqual("r", handle.mode)
+        self.assertEqual(0, handle.tell())
 
         text = handle.read()
-        self.assertEquals(0, handle.tell())
-        self.assertEquals("", text)
+        self.assertEqual(0, handle.tell())
+        self.assertEqual("", text)
 
         handle.close()
         self.assertTrue(handle.closed)
 
-        self.assertEquals(handle, mock_open.return_value)
+        self.assertEqual(handle, mock_open.return_value)
         mock_open.assert_called_once_with("/path/to/file", "r")
         handle.read.assert_called_once_with()
         handle.close.assert_called_once_with()
@@ -33,26 +39,26 @@ class TestOpenSingleFiles(unittest.TestCase):
         """Check effects of writing to a file."""
         handle = open("/path/to/file", "w")
         self.assertFalse(handle.closed)
-        self.assertEquals("/path/to/file", handle.name)
-        self.assertEquals("w", handle.mode)
-        self.assertEquals(0, handle.tell())
+        self.assertEqual("/path/to/file", handle.name)
+        self.assertEqual("w", handle.mode)
+        self.assertEqual(0, handle.tell())
 
         handle.write("some text\n")
-        self.assertEquals(len("some text\n"), handle.tell())
+        self.assertEqual(len("some text\n"), handle.tell())
         handle.write("More text!")
-        self.assertEquals(
+        self.assertEqual(
             len("some text\n") + len("More text!"),
             handle.tell())
 
         handle.close()
         self.assertTrue(handle.closed)
 
-        self.assertEquals(handle, mock_open.return_value)
+        self.assertEqual(handle, mock_open.return_value)
         mock_open.assert_called_once_with("/path/to/file", "w")
-        self.assertEquals(
+        self.assertEqual(
             [call("some text\n"), call("More text!"), ],
             handle.write.mock_calls)
-        self.assertEquals("some text\nMore text!", handle.read_data)
+        self.assertEqual("some text\nMore text!", handle.read_data)
         handle.close.assert_called_once_with()
 
     def test_read_as_context_manager(self, mock_open):
@@ -61,16 +67,16 @@ class TestOpenSingleFiles(unittest.TestCase):
         """
         with open("/path/to/file", "r") as handle:
             self.assertFalse(handle.closed)
-            self.assertEquals("/path/to/file", handle.name)
-            self.assertEquals("r", handle.mode)
-            self.assertEquals(0, handle.tell())
+            self.assertEqual("/path/to/file", handle.name)
+            self.assertEqual("r", handle.mode)
+            self.assertEqual(0, handle.tell())
 
             text = handle.read()
-            self.assertEquals(0, handle.tell())
-            self.assertEquals("", text)
+            self.assertEqual(0, handle.tell())
+            self.assertEqual("", text)
 
         self.assertTrue(handle.closed)
-        self.assertEquals(handle, mock_open.return_value)
+        self.assertEqual(handle, mock_open.return_value)
         mock_open.assert_called_once_with("/path/to/file", "r")
         handle.read.assert_called_once_with()
         handle.close.assert_called_once_with()
@@ -79,24 +85,24 @@ class TestOpenSingleFiles(unittest.TestCase):
         """Check effects of writing to a file using a context manager."""
         with open("/path/to/file", "w") as handle:
             self.assertFalse(handle.closed)
-            self.assertEquals("/path/to/file", handle.name)
-            self.assertEquals("w", handle.mode)
-            self.assertEquals(0, handle.tell())
+            self.assertEqual("/path/to/file", handle.name)
+            self.assertEqual("w", handle.mode)
+            self.assertEqual(0, handle.tell())
 
             handle.write("some text\n")
-            self.assertEquals(len("some text\n"), handle.tell())
+            self.assertEqual(len("some text\n"), handle.tell())
             handle.write("More text!")
-            self.assertEquals(
+            self.assertEqual(
                 len("some text\n") + len("More text!"),
                 handle.tell())
 
         self.assertTrue(handle.closed)
-        self.assertEquals(handle, mock_open.return_value)
+        self.assertEqual(handle, mock_open.return_value)
         mock_open.assert_called_once_with("/path/to/file", "w")
-        self.assertEquals(
+        self.assertEqual(
             [call("some text\n"), call("More text!"), ],
             handle.write.mock_calls)
-        self.assertEquals("some text\nMore text!", handle.read_data)
+        self.assertEqual("some text\nMore text!", handle.read_data)
         handle.close.assert_called_once_with()
 
     def test_seek(self, _):
@@ -104,7 +110,7 @@ class TestOpenSingleFiles(unittest.TestCase):
         with open("/path/to/file", "w+") as handle:
             handle.write("There's no place like home")
             handle.seek(len("There's "))
-            self.assertEquals("no place like home", handle.read())
+            self.assertEqual("no place like home", handle.read())
 
     def test_set_contents(self, mock_open):
         """Check setting file's contents before reading from it."""
@@ -124,15 +130,15 @@ class TestOpenSingleFiles(unittest.TestCase):
         # Make sure the only call logged was to read().
         handle.write.assert_not_called()
         handle.read.assert_called_once_with()
-        self.assertEquals("\n".join(contents), data)
+        self.assertEqual("\n".join(contents), data)
 
     def test_read_size(self, mock_open):
         """Check reading a certain amount of bytes from the file."""
         mock_open.return_value.read_data = "0123456789"
         with open("/path/to/file", "r") as handle:
-            self.assertEquals("0123", handle.read(4))
-            self.assertEquals("4567", handle.read(4))
-            self.assertEquals("89", handle.read())
+            self.assertEqual("0123", handle.read(4))
+            self.assertEqual("4567", handle.read(4))
+            self.assertEqual("89", handle.read())
 
     def test_different_read_calls(self, mock_open):
         """Check that read/readline/readlines all work in sync."""
@@ -152,10 +158,10 @@ class TestOpenSingleFiles(unittest.TestCase):
             third_line = handle.read(len(contents[2]) + 1)
             rest = handle.readlines()
 
-            self.assertEquals(contents[0] + "\n", first_line)
-            self.assertEquals(contents[1] + "\n", second_line)
-            self.assertEquals(contents[2] + "\n", third_line)
-            self.assertEquals("\n".join(contents[3:]), "".join(rest))
+            self.assertEqual(contents[0] + "\n", first_line)
+            self.assertEqual(contents[1] + "\n", second_line)
+            self.assertEqual(contents[2] + "\n", third_line)
+            self.assertEqual("\n".join(contents[3:]), "".join(rest))
 
     def test_different_write_calls(self, _):
         """Check multiple calls to write and writelines."""
@@ -178,7 +184,7 @@ class TestOpenSingleFiles(unittest.TestCase):
             handle.write(contents[4] + "\n")
             handle.writelines(line + "\n" for line in contents[5:])
 
-        self.assertEquals(contents, handle.read_data.splitlines())
+        self.assertEqual(contents, handle.read_data.splitlines())
 
     def test_iteration(self, mock_open):
         """Test iterating over the file handle."""
@@ -193,7 +199,7 @@ class TestOpenSingleFiles(unittest.TestCase):
         mock_open.return_value.read_data = "".join(contents)
         with open("/path/to/file", "r") as handle:
             for (i, line) in enumerate(handle):
-                self.assertEquals(contents[i], line)
+                self.assertEqual(contents[i], line)
 
     def test_getitem_after_call(self, mock_open):
         """Retrieving a handle after the call to open() should give us the same
@@ -202,7 +208,7 @@ class TestOpenSingleFiles(unittest.TestCase):
         with open("/path/to/file", "r") as handle:
             pass
 
-        self.assertEquals(handle, mock_open["/path/to/file"])
+        self.assertEqual(handle, mock_open["/path/to/file"])
 
     def test_setting_custom_mock(self, mock_open):
         """Check 'manually' setting a mock for a file."""
@@ -213,7 +219,7 @@ class TestOpenSingleFiles(unittest.TestCase):
         self.assertIsInstance(open("/path/to/other_file", "r"), FileLikeMock)
 
         # Check with a regular call.
-        self.assertEquals(custom_mock, open("/path/to/file", "r"))
+        self.assertEqual(custom_mock, open("/path/to/file", "r"))
 
         # Check as a context manager.
         custom_mock.read.side_effect = IOError()
@@ -224,7 +230,7 @@ class TestOpenSingleFiles(unittest.TestCase):
             self.assertRaises(IOError, handle.write, "error")
 
 
-@patch("__builtin__.open", new_callable=MockOpen)
+@patch(OPEN, new_callable=MockOpen)
 class TestMultipleCalls(unittest.TestCase):
     """Test multiple calls to open()."""
     def test_read_then_write(self, _):
@@ -239,8 +245,8 @@ class TestMultipleCalls(unittest.TestCase):
         with open("/path/to/file", "r") as second_handle:
             contents = second_handle.read()
 
-        self.assertEquals(first_handle, second_handle)
-        self.assertEquals("Ground control to Major Tom", contents)
+        self.assertEqual(first_handle, second_handle)
+        self.assertEqual("Ground control to Major Tom", contents)
 
     def test_access_different_files(self, mock_open):
         """Check access to different files with multiple calls to open()."""
@@ -250,25 +256,25 @@ class TestMultipleCalls(unittest.TestCase):
         # Paths should be set when created, if possible.
         # Note this isn't the case when not specifically instantiating a file
         # mock (eg., by using `return_value` instead).
-        self.assertEquals("/path/to/first_file", first_handle.name)
-        self.assertEquals("/path/to/second_file", second_handle.name)
+        self.assertEqual("/path/to/first_file", first_handle.name)
+        self.assertEqual("/path/to/second_file", second_handle.name)
 
         first_handle.read_data = "This is the FIRST file"
         second_handle.read_data = "This is the SECOND file"
 
         with open("/path/to/first_file", "r") as handle:
-            self.assertEquals("/path/to/first_file", handle.name)
-            self.assertEquals("This is the FIRST file", handle.read())
+            self.assertEqual("/path/to/first_file", handle.name)
+            self.assertEqual("This is the FIRST file", handle.read())
 
         with open("/path/to/second_file", "r") as handle:
-            self.assertEquals("/path/to/second_file", handle.name)
-            self.assertEquals("This is the SECOND file", handle.read())
+            self.assertEqual("/path/to/second_file", handle.name)
+            self.assertEqual("This is the SECOND file", handle.read())
 
         # return_value is set to the last handle returned.
-        self.assertEquals(second_handle, mock_open.return_value)
+        self.assertEqual(second_handle, mock_open.return_value)
 
-        self.assertEquals("r", first_handle.mode)
-        self.assertEquals("r", second_handle.mode)
+        self.assertEqual("r", first_handle.mode)
+        self.assertEqual("r", second_handle.mode)
         first_handle.read.assert_called_once_with()
         second_handle.read.assert_called_once_with()
 
@@ -278,10 +284,10 @@ class TestMultipleCalls(unittest.TestCase):
             pass
 
         with open("/path/to/second_file", "r") as handle:
-            self.assertEquals(handle, mock_open.return_value)
+            self.assertEqual(handle, mock_open.return_value)
 
 
-@patch("__builtin__.open", new_callable=MockOpen)
+@patch(OPEN, new_callable=MockOpen)
 class TestSideEffects(unittest.TestCase):
     """Test setting the side_effect attribute in various situations."""
     def test_error_on_open(self, mock_open):
@@ -336,8 +342,8 @@ class TestSideEffects(unittest.TestCase):
         with open("/path/to/file", "w") as handle:
             contents = handle.read()
 
-        self.assertEquals("Hijacked!", contents)
-        self.assertEquals(0, handle.tell())
+        self.assertEqual("Hijacked!", contents)
+        self.assertEqual(0, handle.tell())
 
     def test_hijack_write(self, mock_open):
         """Replace the normal write() with a fake one.
@@ -358,8 +364,8 @@ class TestSideEffects(unittest.TestCase):
         with open("/path/to/file", "r") as handle:
             handle.write("text")
 
-        self.assertEquals("text", contents[0])
-        self.assertEquals(0, handle.tell())
+        self.assertEqual("text", contents[0])
+        self.assertEqual(0, handle.tell())
 
     def test_wrap_read(self, mock_open):
         """Wrap the normal read() function to add to regular operations.
@@ -387,7 +393,7 @@ class TestSideEffects(unittest.TestCase):
         with open("/path/to/file", "w") as handle:
             contents = handle.read()
 
-        self.assertEquals("Some text", contents)
+        self.assertEqual("Some text", contents)
         self.assertTrue(sentinal[0])
 
     def test_wrap_write(self, mock_open):
@@ -415,7 +421,7 @@ class TestSideEffects(unittest.TestCase):
         with open("/path/to/file", "w") as handle:
             handle.write("Some text")
 
-        self.assertEquals("Some text", handle.read_data)
+        self.assertEqual("Some text", handle.read_data)
         self.assertTrue(sentinal[0])
 
 
@@ -425,11 +431,11 @@ class TestAPI(unittest.TestCase):
         """Check passing of `read_data` to the constructor."""
         mock_open = MockOpen(read_data="Data from the file")
 
-        with patch("__builtin__.open", mock_open):
+        with patch(OPEN, mock_open):
             with open("/path/to/file", "r") as handle:
                 contents = handle.read()
 
-        self.assertEquals("Data from the file", contents)
+        self.assertEqual("Data from the file", contents)
 
     def test_reset_mock(self):
         """Check that reset_mock() works."""
@@ -438,18 +444,18 @@ class TestAPI(unittest.TestCase):
         mock_open["/path/to/file"].read_data = "File-specific"
         mock_open.reset_mock()
 
-        with patch("__builtin__.open", mock_open):
+        with patch(OPEN, mock_open):
             with open("/path/to/file", "r") as handle:
-                self.assertEquals("", handle.read())
+                self.assertEqual("", handle.read())
 
         # Reset a for a specific file mock.
         mock_open = MockOpen(read_data="Global")
         mock_open["/path/to/file"].read_data = "File-specific"
         mock_open["/path/to/file"].reset_mock()
 
-        with patch("__builtin__.open", mock_open):
+        with patch(OPEN, mock_open):
             with open("/path/to/file", "r") as handle:
-                self.assertEquals("", handle.read())
+                self.assertEqual("", handle.read())
 
             with open("/path/to/other/file", "r") as handle:
-                self.assertEquals("Global", handle.read())
+                self.assertEqual("Global", handle.read())

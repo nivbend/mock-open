@@ -1,16 +1,18 @@
 """Mock classes for open() and the file type."""
 
+import sys
 from mock import Mock, NonCallableMock
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+
+if sys.version_info >= (3, 0):
+    from io import TextIOWrapper, StringIO
+else:
+    from io import TextIOWrapper, BytesIO as StringIO
 
 
 class FileLikeMock(NonCallableMock):
     """Acts like a file object returned from open()."""
     def __init__(self, name=None, read_data="", *args, **kws):
-        kws.update({"spec": file, })
+        kws.update({"spec": TextIOWrapper, })
         super(FileLikeMock, self).__init__(*args, **kws)
         self.__is_closed = False
         self.read_data = read_data

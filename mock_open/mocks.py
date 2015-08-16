@@ -42,6 +42,7 @@ class FileLikeMock(NonCallableMock):
         # Set tell/read/write/etc side effects to access the new contents
         # object.
         self.tell.side_effect = self.__contents.tell
+        self.seek.side_effect = self.__contents.seek
         self.read.side_effect = self.__contents.read
         self.readline.side_effect = self.__contents.readline
         self.readlines.side_effect = self.__contents.readlines

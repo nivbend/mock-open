@@ -99,6 +99,13 @@ class TestOpenSingleFiles(unittest.TestCase):
         self.assertEquals("some text\nMore text!", handle.read_data)
         handle.close.assert_called_once_with()
 
+    def test_seek(self, _):
+        """Check calling seek()."""
+        with open("/path/to/file", "w+") as handle:
+            handle.write("There's no place like home")
+            handle.seek(len("There's "))
+            self.assertEquals("no place like home", handle.read())
+
     def test_set_contents(self, mock_open):
         """Check setting file's contents before reading from it."""
         contents = [

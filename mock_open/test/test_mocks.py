@@ -416,3 +416,26 @@ class TestAPI(unittest.TestCase):
                 contents = handle.read()
 
         self.assertEquals("Data from the file", contents)
+
+    def test_reset_mock(self):
+        """Check that reset_mock() works."""
+        # Reset globally for all file mocks.
+        mock_open = MockOpen(read_data="Global")
+        mock_open["/path/to/file"].read_data = "File-specific"
+        mock_open.reset_mock()
+
+        with patch("__builtin__.open", mock_open):
+            with open("/path/to/file", "r") as handle:
+                self.assertEquals("", handle.read())
+
+        # Reset a for a specific file mock.
+        mock_open = MockOpen(read_data="Global")
+        mock_open["/path/to/file"].read_data = "File-specific"
+        mock_open["/path/to/file"].reset_mock()
+
+        with patch("__builtin__.open", mock_open):
+            with open("/path/to/file", "r") as handle:
+                self.assertEquals("", handle.read())
+
+            with open("/path/to/other/file", "r") as handle:
+                self.assertEquals("Global", handle.read())

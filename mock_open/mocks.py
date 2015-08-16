@@ -88,6 +88,15 @@ class MockOpen(Mock):
             self._mock_side_effect = self._mock_return_value.side_effect
 
         child = super(MockOpen, self)._mock_call(path, mode, *args, **kws)
+
+        # Consecutive calls to open() set `return_value` to the last file mock
+        # created. If the paths differ (and child isn't a newly-created mock,
+        # evident by its name attribute being unset) we create a new file mock
+        # instead of returning to previous one.
+        if not isinstance(child.name, Mock) and path != child.name:
+            child = FileLikeMock(read_data=self.__read_data)
+            self.__files[path] = child
+
         child.name = path
         # pylint: disable=attribute-defined-outside-init
         child.mode = mode
@@ -104,6 +113,12 @@ class MockOpen(Mock):
         value.__enter__ = lambda self: self
         value.__exit__ = lambda self, *args: None
         self.__files[path] = value
+
+    def reset_mock(self, visited=None):
+        super(MockOpen, self).reset_mock(visited)
+
+        self.__files = {}
+        self.__read_data = ""
 
     def _get_child_mock(self, **kws):
         kws.update({"read_data": self.__read_data, })

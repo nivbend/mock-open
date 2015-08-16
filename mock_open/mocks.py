@@ -9,12 +9,15 @@ except ImportError:
 
 class FileLikeMock(NonCallableMock):
     """Acts like a file object returned from open()."""
-    def __init__(self, read_data="", *args, **kws):
+    def __init__(self, name=None, read_data="", *args, **kws):
         kws.update({"spec": file, })
         super(FileLikeMock, self).__init__(*args, **kws)
         self.__is_closed = False
         self.read_data = read_data
         self.close.side_effect = self._close
+
+        if name is not None:
+            self.name = name
 
     @property
     def closed(self):
@@ -94,7 +97,7 @@ class MockOpen(Mock):
         # evident by its name attribute being unset) we create a new file mock
         # instead of returning to previous one.
         if not isinstance(child.name, Mock) and path != child.name:
-            child = FileLikeMock(read_data=self.__read_data)
+            child = self._get_child_mock(name=path)
             self.__files[path] = child
 
         child.name = path
@@ -104,10 +107,11 @@ class MockOpen(Mock):
         if path not in self.__files:
             self.__files[path] = child
 
+        self._mock_return_value = child
         return child
 
     def __getitem__(self, path):
-        return self.__files.setdefault(path, FileLikeMock())
+        return self.__files.setdefault(path, self._get_child_mock(name=path))
 
     def __setitem__(self, path, value):
         value.__enter__ = lambda self: self
@@ -121,5 +125,5 @@ class MockOpen(Mock):
         self.__read_data = ""
 
     def _get_child_mock(self, **kws):
-        kws.update({"read_data": self.__read_data, })
+        kws.update({"_new_parent": self, "read_data": self.__read_data, })
         return FileLikeMock(**kws)

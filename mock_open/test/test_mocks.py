@@ -247,24 +247,38 @@ class TestMultipleCalls(unittest.TestCase):
         first_handle = mock_open["/path/to/first_file"]
         second_handle = mock_open["/path/to/second_file"]
 
+        # Paths should be set when created, if possible.
+        # Note this isn't the case when not specifically instantiating a file
+        # mock (eg., by using `return_value` instead).
+        self.assertEquals("/path/to/first_file", first_handle.name)
+        self.assertEquals("/path/to/second_file", second_handle.name)
+
         first_handle.read_data = "This is the FIRST file"
         second_handle.read_data = "This is the SECOND file"
 
         with open("/path/to/first_file", "r") as handle:
+            self.assertEquals("/path/to/first_file", handle.name)
             self.assertEquals("This is the FIRST file", handle.read())
 
         with open("/path/to/second_file", "r") as handle:
+            self.assertEquals("/path/to/second_file", handle.name)
             self.assertEquals("This is the SECOND file", handle.read())
 
         # return_value is set to the last handle returned.
         self.assertEquals(second_handle, mock_open.return_value)
 
-        self.assertEquals("/path/to/first_file", first_handle.name)
         self.assertEquals("r", first_handle.mode)
-        self.assertEquals("/path/to/second_file", second_handle.name)
         self.assertEquals("r", second_handle.mode)
         first_handle.read.assert_called_once_with()
         second_handle.read.assert_called_once_with()
+
+    def test_return_value(self, mock_open):
+        """Check that `return_value` always returns the last file mock."""
+        with open("/path/to/first_file", "r"):
+            pass
+
+        with open("/path/to/second_file", "r") as handle:
+            self.assertEquals(handle, mock_open.return_value)
 
 
 @patch("__builtin__.open", new_callable=MockOpen)

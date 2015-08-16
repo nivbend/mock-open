@@ -82,12 +82,12 @@ class MockOpen(Mock):
         self.__files = {}
         self.__read_data = read_data
 
-    def __call__(self, path, mode="r", *args, **kws):
+    def _mock_call(self, path, mode="r", *args, **kws):
         if path in self.__files:
-            self.return_value = self.__files[path]
-            self.side_effect = self.return_value.side_effect
+            self._mock_return_value = self.__files[path]
+            self._mock_side_effect = self._mock_return_value.side_effect
 
-        child = super(MockOpen, self).__call__(path, mode, *args, **kws)
+        child = super(MockOpen, self)._mock_call(path, mode, *args, **kws)
         child.name = path
         # pylint: disable=attribute-defined-outside-init
         child.mode = mode

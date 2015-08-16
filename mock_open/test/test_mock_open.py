@@ -171,6 +171,21 @@ class TestOpenSingleFiles(unittest.TestCase):
 
         self.assertEquals(contents, handle.read_data.splitlines())
 
+    def test_iteration(self, mock_open):
+        """Test iterating over the file handle."""
+        contents = [
+            "So bye, bye, Miss American Pie\n",
+            "Drove my Chevy to the levee but the levee was dry\n",
+            "And them good ole boys were drinking whiskey 'n rye\n",
+            "Singin' this'll be the day that I die\n",
+            "This'll be the day that I die",
+        ]
+
+        mock_open.return_value.read_data = "".join(contents)
+        with open("/path/to/file", "r") as handle:
+            for (i, line) in enumerate(handle):
+                self.assertEquals(contents[i], line)
+
     def test_getitem_after_call(self, mock_open):
         """Retrieving a handle after the call to open() should give us the same
         object.

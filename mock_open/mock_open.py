@@ -48,6 +48,9 @@ class FileLikeMock(NonCallableMock):
     def __exit__(self, exception_type, exception, traceback):
         self.close()
 
+    def __iter__(self):
+        return iter(self.__contents)
+
     def reset_mock(self, visited=None):
         """Reset the default tell/read/write/etc side effects."""
         super(FileLikeMock, self).reset_mock(visited)

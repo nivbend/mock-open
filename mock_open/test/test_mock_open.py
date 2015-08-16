@@ -117,6 +117,60 @@ class TestOpenSingleFiles(unittest.TestCase):
         handle.read.assert_called_once_with()
         self.assertEquals("\n".join(contents), data)
 
+    def test_read_size(self, mock_open):
+        """Check reading a certain amount of bytes from the file."""
+        mock_open.return_value.read_data = "0123456789"
+        with open("/path/to/file", "r") as handle:
+            self.assertEquals("0123", handle.read(4))
+            self.assertEquals("4567", handle.read(4))
+            self.assertEquals("89", handle.read())
+
+    def test_different_read_calls(self, mock_open):
+        """Check that read/readline/readlines all work in sync."""
+        contents = [
+            "Now that she's back in the atmosphere",
+            "With drops of Jupiter in her hair, hey, hey, hey",
+            "She acts like summer and walks like rain",
+            "Reminds me that there's a time to change, hey, hey, hey",
+            "Since the return from her stay on the moon",
+            "She listens like spring and she talks like June, hey, hey, hey",
+        ]
+
+        mock_open.return_value.read_data = "\n".join(contents)
+        with open("/path/to/file", "r") as handle:
+            first_line = handle.read(len(contents[0]) + 1)
+            second_line = handle.readline()
+            third_line = handle.read(len(contents[2]) + 1)
+            rest = handle.readlines()
+
+            self.assertEquals(contents[0] + "\n", first_line)
+            self.assertEquals(contents[1] + "\n", second_line)
+            self.assertEquals(contents[2] + "\n", third_line)
+            self.assertEquals("\n".join(contents[3:]), "".join(rest))
+
+    def test_different_write_calls(self, mock_open):
+        """Check multiple calls to write and writelines."""
+        contents = [
+            "They paved paradise",
+            "And put up a parking lot",
+            "With a pink hotel, a boutique",
+            "And a swinging hot SPOT",
+            "Don't it always seem to go",
+            "That you don't know what you've got",
+            "'Til it's gone",
+            "They paved paradise",
+            "And put up a parking lot",
+        ]
+
+        with open("/path/to/file", "w") as handle:
+            handle.write(contents[0] + "\n")
+            handle.write(contents[1] + "\n")
+            handle.writelines(line + "\n" for line in contents[2:4])
+            handle.write(contents[4] + "\n")
+            handle.writelines(line + "\n" for line in contents[5:])
+
+        self.assertEquals(contents, handle.read_data.splitlines())
+
     def test_getitem_after_call(self, mock_open):
         """Retrieving a handle after the call to open() should give us the same
         object.

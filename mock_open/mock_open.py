@@ -32,11 +32,17 @@ class FileLikeMock(NonCallableMock):
         # Set tell/read/write/etc side effects to access the new contents
         # object.
         self.tell.side_effect = self.__contents.tell
-        self.read.side_effect = self.__contents.getvalue
+        self.read.side_effect = self.__contents.read
+        self.readline.side_effect = self.__contents.readline
+        self.readlines.side_effect = self.__contents.readlines
         self.write.side_effect = self.__contents.write
+        self.writelines.side_effect = self.__contents.writelines
         self.close.side_effect = self._close
 
     def __enter__(self):
+        # Reset the position in buffer (in case we re-opened it).
+        self.__contents.seek(0)
+
         return self
 
     def __exit__(self, exception_type, exception, traceback):

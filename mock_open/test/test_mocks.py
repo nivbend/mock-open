@@ -1,9 +1,9 @@
-"""Test cases for the mock_open module."""
+"""Test cases for the mocks module."""
 
 import unittest
-from mock import patch, call, NonCallableMock
-from ..mock_open import MockOpen, FileLikeMock
 from functools import wraps
+from mock import patch, call, NonCallableMock
+from ..mocks import MockOpen, FileLikeMock
 
 
 @patch("__builtin__.open", new_callable=MockOpen)

@@ -1,3 +1,5 @@
+"""Mock classes for open() and the file type."""
+
 from mock import Mock, NonCallableMock
 try:
     from cStringIO import StringIO
@@ -15,14 +17,21 @@ class FileLikeMock(NonCallableMock):
 
     @property
     def closed(self):
+        # pylint: disable=missing-docstring
         return self.__is_closed
 
     @property
     def read_data(self):
+        """Bypass read function to access the contents of the file.
+
+        This property should be used for testing purposes.
+        """
         return self.__contents.getvalue()
 
     @read_data.setter
     def read_data(self, contents):
+        # pylint: disable=missing-docstring
+        # pylint: disable=attribute-defined-outside-init
         self.__contents = StringIO()
 
         # Constructing a cStrinIO object with the input string would result
@@ -59,10 +68,12 @@ class FileLikeMock(NonCallableMock):
         self.read_data = ""
 
     def _close(self):
+        """Mark file as closed (used for side_effect)."""
         self.__is_closed = True
 
 
 class MockOpen(Mock):
+    """A mock for the open() builtin function."""
     def __init__(self, read_data="", *args, **kws):
         kws.update({"spec": open, "name": open.__name__, })
         super(MockOpen, self).__init__(*args, **kws)

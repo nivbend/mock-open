@@ -1,3 +1,5 @@
+"""Test cases for the mock_open module."""
+
 import unittest
 from mock import patch, call, NonCallableMock
 from ..mock_open import MockOpen, FileLikeMock
@@ -148,7 +150,7 @@ class TestOpenSingleFiles(unittest.TestCase):
             self.assertEquals(contents[2] + "\n", third_line)
             self.assertEquals("\n".join(contents[3:]), "".join(rest))
 
-    def test_different_write_calls(self, mock_open):
+    def test_different_write_calls(self, _):
         """Check multiple calls to write and writelines."""
         contents = [
             "They paved paradise",
@@ -218,7 +220,7 @@ class TestOpenSingleFiles(unittest.TestCase):
 @patch("__builtin__.open", new_callable=MockOpen)
 class TestMultipleCalls(unittest.TestCase):
     """Test multiple calls to open()."""
-    def test_read_then_write(self, mock_open):
+    def test_read_then_write(self, _):
         """Accessing the same file should handle the same object.
 
         Reading from a file after writing to it should give us the same
@@ -288,7 +290,7 @@ class TestSideEffects(unittest.TestCase):
         mock_open["/path/to/error_file"].side_effect = IOError()
 
         # Trying to open a different file should be OK.
-        with open("/path/to/allowed_file", "r") as allowed_handle:
+        with open("/path/to/allowed_file", "r"):
             pass
 
         # But openning the bad file should raise an exception.
@@ -323,6 +325,7 @@ class TestSideEffects(unittest.TestCase):
         unchanged after the call to write().
         """
         def fake_write(data):
+            # pylint: disable=missing-docstring
             contents[0] = data
 
         # If we define contents as a 'simple' variable (just None, for example)
@@ -344,10 +347,12 @@ class TestSideEffects(unittest.TestCase):
         our own code around operations.
         """
         def wrap_read(original_read):
+            # pylint: disable=missing-docstring
             original_side_effect = original_read.side_effect
 
             @wraps(original_side_effect)
             def wrapped_read(*args, **kws):
+                # pylint: disable=missing-docstring
                 sentinal[0] = True
                 return original_side_effect(*args, **kws)
 
@@ -371,10 +376,12 @@ class TestSideEffects(unittest.TestCase):
         our own code around operations.
         """
         def wrap_write(original_write):
+            # pylint: disable=missing-docstring
             original_side_effect = original_write.side_effect
 
             @wraps(original_side_effect)
             def wrapped_write(*args, **kws):
+                # pylint: disable=missing-docstring
                 sentinal[0] = True
                 return original_side_effect(*args, **kws)
 

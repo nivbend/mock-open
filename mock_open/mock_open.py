@@ -14,6 +14,7 @@ class FileLikeMock(NonCallableMock):
         super(FileLikeMock, self).__init__(*args, **kws)
         self.__is_closed = False
         self.read_data = read_data
+        self.close.side_effect = self._close
 
     @property
     def closed(self):
@@ -46,7 +47,6 @@ class FileLikeMock(NonCallableMock):
         self.readlines.side_effect = self.__contents.readlines
         self.write.side_effect = self.__contents.write
         self.writelines.side_effect = self.__contents.writelines
-        self.close.side_effect = self._close
 
     def __enter__(self):
         # Reset the position in buffer (in case we re-opened it).
@@ -66,6 +66,7 @@ class FileLikeMock(NonCallableMock):
 
         # Reset contents and tell/read/write/close side effects.
         self.read_data = ""
+        self.close.side_effect = self._close
 
     def _close(self):
         """Mark file as closed (used for side_effect)."""

@@ -2,3 +2,5 @@
 *.py[co]
 
 build/
+*.egg-info/
+.tox/

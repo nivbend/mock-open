@@ -92,11 +92,18 @@ class MockOpen(Mock):
         self.__read_data = read_data
 
     def _mock_call(self, path, mode="r", *args, **kws):
+        original_side_effect = self._mock_side_effect
+
         if path in self.__files:
             self._mock_return_value = self.__files[path]
             self._mock_side_effect = self._mock_return_value.side_effect
 
-        child = super(MockOpen, self)._mock_call(path, mode, *args, **kws)
+        try:
+            child = super(MockOpen, self)._mock_call(path, mode, *args, **kws)
+        finally:
+            # Reset the side effect after each call so that the next call to
+            # open() won't cause the same side_effect.
+            self._mock_side_effect = original_side_effect
 
         # Consecutive calls to open() set `return_value` to the last file mock
         # created. If the paths differ (and child isn't a newly-created mock,
@@ -131,5 +138,14 @@ class MockOpen(Mock):
         self.__read_data = ""
 
     def _get_child_mock(self, **kws):
-        kws.update({"_new_parent": self, "read_data": self.__read_data, })
+        """Create a new FileLikeMock instance.
+
+        The new mock will inherit the parent's side_effect and read_data
+        attributes.
+        """
+        kws.update({
+            "_new_parent": self,
+            "side_effect": self._mock_side_effect,
+            "read_data": self.__read_data,
+        })
         return FileLikeMock(**kws)

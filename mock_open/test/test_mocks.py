@@ -6,9 +6,9 @@ from functools import wraps
 from ..mocks import MockOpen, FileLikeMock
 
 if sys.version_info < (3, 3):
-    from mock import patch, call, NonCallableMock
+    from mock import patch, call, NonCallableMock, DEFAULT
 else:
-    from unittest.mock import patch, call, NonCallableMock
+    from unittest.mock import patch, call, NonCallableMock, DEFAULT
 
 if sys.version_info >= (3, 0):
     OPEN = "builtins.open"
@@ -295,10 +295,39 @@ class TestMultipleCalls(unittest.TestCase):
 class TestSideEffects(unittest.TestCase):
     """Test setting the side_effect attribute in various situations."""
     def test_error_on_open(self, mock_open):
-        """Simulate error openning file."""
+        """Simulate error openning a file."""
         mock_open.side_effect = IOError()
 
         self.assertRaises(IOError, open, "/not/there", "r")
+
+    def test_error_on_any_open(self, mock_open):
+        """Simulate errors opening any file."""
+        mock_open.side_effect = IOError()
+
+        self.assertRaises(IOError, open, "/not/there_1", "r")
+        self.assertRaises(IOError, open, "/not/there_2", "r")
+        self.assertRaises(IOError, open, "/not/there_3", "r")
+
+    def test_error_on_all_but_one(self, mock_open):
+        """Setting a global error but allowing specific file/s."""
+        mock_open.side_effect = IOError()
+        mock_open["/is/there"].side_effect = None
+
+        self.assertRaises(IOError, open, "/not/there_1", "r")
+        self.assertRaises(IOError, open, "/not/there_2", "r")
+
+        with open("/is/there", "r"):
+            pass
+
+    def test_error_list(self, mock_open):
+        """Setting a global side effect iterator."""
+        mock_open.side_effect = [ValueError(), RuntimeError(), DEFAULT, ]
+
+        self.assertRaises(ValueError, open, "/not/there_1", "r")
+        self.assertRaises(RuntimeError, open, "/not/there_2", "r")
+
+        with open("/is/there", "r"):
+            pass
 
     def test_error_on_read(self, mock_open):
         """Simulate error when reading from file."""

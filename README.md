@@ -8,6 +8,13 @@ A better mock for file I/O.
 This project was started as part of a [different one](github.com/nivbend/bdd_bot) where I needed
 a better mock for the builtin `open`.
 
+Install
+-------
+
+```
+$ pip install mock-open
+```
+
 class `MockOpen`
 --------------
 

@@ -3,8 +3,12 @@
 import sys
 import unittest
 from functools import wraps
-from mock import patch, call, NonCallableMock
 from ..mocks import MockOpen, FileLikeMock
+
+if sys.version_info < (3, 3):
+    from mock import patch, call, NonCallableMock
+else:
+    from unittest.mock import patch, call, NonCallableMock
 
 if sys.version_info >= (3, 0):
     OPEN = "builtins.open"

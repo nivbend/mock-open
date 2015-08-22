@@ -1,7 +1,11 @@
 """Mock classes for open() and the file type."""
 
 import sys
-from mock import Mock, NonCallableMock
+
+if sys.version_info < (3, 3):
+    from mock import Mock, NonCallableMock
+else:
+    from unittest.mock import Mock, NonCallableMock
 
 if sys.version_info >= (3, 0):
     from io import TextIOWrapper, StringIO
@@ -66,9 +70,9 @@ class FileLikeMock(NonCallableMock):
     def __iter__(self):
         return iter(self.__contents)
 
-    def reset_mock(self, visited=None):
+    def reset_mock(self):
         """Reset the default tell/read/write/etc side effects."""
-        super(FileLikeMock, self).reset_mock(visited)
+        super(FileLikeMock, self).reset_mock()
 
         # Reset contents and tell/read/write/close side effects.
         self.read_data = ""
@@ -120,8 +124,8 @@ class MockOpen(Mock):
         value.__exit__ = lambda self, *args: None
         self.__files[path] = value
 
-    def reset_mock(self, visited=None):
-        super(MockOpen, self).reset_mock(visited)
+    def reset_mock(self):
+        super(MockOpen, self).reset_mock()
 
         self.__files = {}
         self.__read_data = ""

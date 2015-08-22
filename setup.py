@@ -1,12 +1,18 @@
 """Setuptools setup script for the package."""
 
 from setuptools import setup
+import sys
 
 
 def _get_version():
     # pylint: disable=missing-docstring
     with open(".version") as version:
         return version.read().rstrip("\n")
+
+DEPENDENCIES = []
+if sys.version_info < (3, 3):
+    DEPENDENCIES.append("mock")
+
 
 setup(
     name="mock-open",
@@ -18,9 +24,7 @@ setup(
     license="MIT",
     packages=["mock_open", ],
     test_suite="mock_open.test.test_mocks",
-    install_requires=[
-        "mock",
-    ],
+    install_requires=DEPENDENCIES,
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",

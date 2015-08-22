@@ -424,6 +424,26 @@ class TestSideEffects(unittest.TestCase):
         self.assertEqual("Some text", handle.read_data)
         self.assertTrue(sentinal[0])
 
+    def test_multiple_files(self, mock_open):
+        """Test different side effects for different files."""
+        mock_open["fail_on_open"].side_effect = IOError()
+        mock_open["fail_on_read"].read.side_effect = IOError()
+        mock_open["fail_on_write"].write.side_effect = IOError()
+
+        with open("success", "w") as handle:
+            handle.write("some text")
+
+        self.assertRaises(IOError, open, "fail_on_open", "rb")
+
+        with open("fail_on_read", "r") as handle:
+            self.assertRaises(IOError, handle.read)
+
+        with open("fail_on_write", "w") as handle:
+            self.assertRaises(IOError, handle.write, "not to be written")
+
+        with open("success", "r") as handle:
+            self.assertEqual("some text", handle.read())
+
 
 class TestAPI(unittest.TestCase):
     """Test conformance to mock library's API."""

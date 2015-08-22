@@ -70,9 +70,14 @@ class FileLikeMock(NonCallableMock):
     def __iter__(self):
         return iter(self.__contents)
 
-    def reset_mock(self):
+    def reset_mock(self, visited=None):
         """Reset the default tell/read/write/etc side effects."""
-        super(FileLikeMock, self).reset_mock()
+        # In some versions of the mock library, `reset_mock` takes an argument
+        # and in some it doesn't. We try to handle all situations.
+        if visited is not None:
+            super(FileLikeMock, self).reset_mock(visited)
+        else:
+            super(FileLikeMock, self).reset_mock()
 
         # Reset contents and tell/read/write/close side effects.
         self.read_data = ""
@@ -131,8 +136,12 @@ class MockOpen(Mock):
         value.__exit__ = lambda self, *args: None
         self.__files[path] = value
 
-    def reset_mock(self):
-        super(MockOpen, self).reset_mock()
+    def reset_mock(self, visited=None):
+        # See comment in `FileLikeMock.reset_mock`.
+        if visited is not None:
+            super(MockOpen, self).reset_mock(visited)
+        else:
+            super(MockOpen, self).reset_mock()
 
         self.__files = {}
         self.__read_data = ""

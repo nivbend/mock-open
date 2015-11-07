@@ -15,8 +15,8 @@ else:
 
 class FileLikeMock(NonCallableMock):
     """Acts like a file object returned from open()."""
-    def __init__(self, name=None, read_data="", *args, **kws):
-        kws.update({"spec": TextIOWrapper, })
+    def __init__(self, name=None, read_data='', *args, **kws):
+        kws.update({'spec': TextIOWrapper, })
         super(FileLikeMock, self).__init__(*args, **kws)
         self.__is_closed = False
         self.read_data = read_data
@@ -81,7 +81,7 @@ class FileLikeMock(NonCallableMock):
             super(FileLikeMock, self).reset_mock()
 
         # Reset contents and tell/read/write/close side effects.
-        self.read_data = ""
+        self.read_data = ''
         self.close.side_effect = self._close
 
     def _close(self):
@@ -91,13 +91,13 @@ class FileLikeMock(NonCallableMock):
 
 class MockOpen(Mock):
     """A mock for the open() builtin function."""
-    def __init__(self, read_data="", *args, **kws):
-        kws.update({"spec": open, "name": open.__name__, })
+    def __init__(self, read_data='', *args, **kws):
+        kws.update({'spec': open, 'name': open.__name__, })
         super(MockOpen, self).__init__(*args, **kws)
         self.__files = {}
         self.__read_data = read_data
 
-    def _mock_call(self, path, mode="r", *args, **kws):
+    def _mock_call(self, path, mode='r', *args, **kws):
         original_side_effect = self._mock_side_effect
 
         if path in self.__files:
@@ -145,7 +145,7 @@ class MockOpen(Mock):
             super(MockOpen, self).reset_mock()
 
         self.__files = {}
-        self.__read_data = ""
+        self.__read_data = ''
 
     def _get_child_mock(self, **kws):
         """Create a new FileLikeMock instance.
@@ -154,8 +154,8 @@ class MockOpen(Mock):
         attributes.
         """
         kws.update({
-            "_new_parent": self,
-            "side_effect": self._mock_side_effect,
-            "read_data": self.__read_data,
+            '_new_parent': self,
+            'side_effect': self._mock_side_effect,
+            'read_data': self.__read_data,
         })
         return FileLikeMock(**kws)

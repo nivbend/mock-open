@@ -10,9 +10,9 @@ else:
     from unittest.mock import patch
 
 if sys.version_info >= (3, 0):
-    OPEN = "builtins.open"
+    OPEN = 'builtins.open'
 else:
-    OPEN = "__builtin__.open"
+    OPEN = '__builtin__.open'
 
 
 class TestIssues(unittest.TestCase):
@@ -22,20 +22,20 @@ class TestIssues(unittest.TestCase):
         consecutive calls.
         """
         mock_open = MockOpen()
-        mock_open["fail_on_open"].side_effect = IOError()
+        mock_open['fail_on_open'].side_effect = IOError()
 
         with patch(OPEN, mock_open):
             with self.assertRaises(IOError):
-                open("fail_on_open", "rb")
+                open('fail_on_open', 'rb')
 
-            with open("success", "r") as handle:
-                self.assertEqual("", handle.read())
+            with open('success', 'r') as handle:
+                self.assertEqual('', handle.read())
 
     def test_issue_3(self):
         """Position in file should be set to 0 after the call to `open`."""
-        mock_open = MockOpen(read_data="some content")
+        mock_open = MockOpen(read_data='some content')
 
         with patch(OPEN, mock_open):
-            handle = open("/path/to/file", "r")
+            handle = open('/path/to/file', 'r')
             self.assertEqual(0, handle.tell())
-            self.assertEqual("some content", handle.read())
+            self.assertEqual('some content', handle.read())

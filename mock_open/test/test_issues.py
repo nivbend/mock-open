@@ -30,3 +30,12 @@ class TestIssues(unittest.TestCase):
 
             with open("success", "r") as handle:
                 self.assertEqual("", handle.read())
+
+    def test_issue_3(self):
+        """Position in file should be set to 0 after the call to `open`."""
+        mock_open = MockOpen(read_data="some content")
+
+        with patch(OPEN, mock_open):
+            handle = open("/path/to/file", "r")
+            self.assertEqual(0, handle.tell())
+            self.assertEqual("some content", handle.read())

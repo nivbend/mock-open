@@ -21,6 +21,7 @@ class FileLikeMock(NonCallableMock):
         self.__is_closed = False
         self.read_data = read_data
         self.close.side_effect = self._close
+        self.__contents.seek(0)
 
         if name is not None:
             self.name = name

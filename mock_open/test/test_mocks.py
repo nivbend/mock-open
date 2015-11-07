@@ -65,16 +65,27 @@ class TestOpenSingleFiles(unittest.TestCase):
         self.assertEqual('some text\nMore text!', handle.read_data)
         handle.close.assert_called_once_with()
 
-    def test_read_as_context_manager(self, mock_open):
-        """Check effects of reading from an empty file using a context
-        manager.
-        """
+    def test_context_manager(self, mock_open):
+        """Check calls made when `open` is used as a context manager."""
         with open('/path/to/file', 'r') as handle:
             self.assertFalse(handle.closed)
             self.assertEqual('/path/to/file', handle.name)
             self.assertEqual('r', handle.mode)
             self.assertEqual(0, handle.tell())
 
+        mock_open.assert_has_calls([
+            call('/path/to/file', 'r'),
+            call().__enter__(),
+            call().tell(),
+            call().__exit__(None, None, None),
+            call().close(),
+        ])
+
+    def test_read_as_context_manager(self, mock_open):
+        """Check effects of reading from an empty file using a context
+        manager.
+        """
+        with open('/path/to/file', 'r') as handle:
             text = handle.read()
             self.assertEqual(0, handle.tell())
             self.assertEqual('', text)
@@ -88,11 +99,6 @@ class TestOpenSingleFiles(unittest.TestCase):
     def test_write_as_context_manager(self, mock_open):
         """Check effects of writing to a file using a context manager."""
         with open('/path/to/file', 'w') as handle:
-            self.assertFalse(handle.closed)
-            self.assertEqual('/path/to/file', handle.name)
-            self.assertEqual('w', handle.mode)
-            self.assertEqual(0, handle.tell())
-
             handle.write("some text\n")
             self.assertEqual(len("some text\n"), handle.tell())
             handle.write('More text!')

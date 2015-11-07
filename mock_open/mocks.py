@@ -23,6 +23,9 @@ class FileLikeMock(NonCallableMock):
         self.close.side_effect = self._close
         self.__contents.seek(0)
 
+        self.__enter__ = Mock(side_effect=self._enter)
+        self.__exit__ = Mock(side_effect=self._exit)
+
         if name is not None:
             self.name = name
 
@@ -59,15 +62,6 @@ class FileLikeMock(NonCallableMock):
         self.write.side_effect = self.__contents.write
         self.writelines.side_effect = self.__contents.writelines
 
-    def __enter__(self):
-        # Reset the position in buffer (in case we re-opened it).
-        self.__contents.seek(0)
-
-        return self
-
-    def __exit__(self, exception_type, exception, traceback):
-        self.close()
-
     def __iter__(self):
         return iter(self.__contents)
 
@@ -83,6 +77,17 @@ class FileLikeMock(NonCallableMock):
         # Reset contents and tell/read/write/close side effects.
         self.read_data = ''
         self.close.side_effect = self._close
+
+    def _enter(self):
+        """Reset the position in buffer whenever entering context."""
+        self.__contents.seek(0)
+
+        return self
+
+    def _exit(self, exception_type, exception, traceback):
+        """Close file when exiting context."""
+        # pylint: disable=unused-argument
+        self.close()
 
     def _close(self):
         """Mark file as closed (used for side_effect)."""

@@ -15,16 +15,18 @@ else:
     OPEN = "__builtin__.open"
 
 
-@patch(OPEN, new_callable=MockOpen)
 class TestIssues(unittest.TestCase):
     """Test cases related to issues on GitHub."""
-    def test_issue_1(self, mock_open):
+    def test_issue_1(self):
         """Setting a side effect on a specific open() shouldn't affect
         consecutive calls.
         """
+        mock_open = MockOpen()
         mock_open["fail_on_open"].side_effect = IOError()
 
-        self.assertRaises(IOError, open, "fail_on_open", "rb")
+        with patch(OPEN, mock_open):
+            with self.assertRaises(IOError):
+                open("fail_on_open", "rb")
 
-        with open("success", "r") as handle:
-            self.assertEqual("", handle.read())
+            with open("success", "r") as handle:
+                self.assertEqual("", handle.read())

@@ -121,7 +121,7 @@ class MockOpen(Mock):
         # evident by its name attribute being unset) we create a new file mock
         # instead of returning to previous one.
         if not isinstance(child.name, Mock) and path != child.name:
-            child = self._get_child_mock(name=path)
+            child = self._get_child_mock(_new_name='()', name=path)
             self.__files[path] = child
 
         child.name = path

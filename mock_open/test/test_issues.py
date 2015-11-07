@@ -5,9 +5,9 @@ import unittest
 from ..mocks import MockOpen
 
 if sys.version_info < (3, 3):
-    from mock import patch
+    from mock import patch, call
 else:
-    from unittest.mock import patch
+    from unittest.mock import patch, call
 
 if sys.version_info >= (3, 0):
     OPEN = 'builtins.open'
@@ -39,3 +39,24 @@ class TestIssues(unittest.TestCase):
             handle = open('/path/to/file', 'r')
             self.assertEqual(0, handle.tell())
             self.assertEqual('some content', handle.read())
+
+    @staticmethod
+    @patch(OPEN, new_callable=MockOpen)
+    def test_issue_4(mock_open):
+        """Assert relative calls after consecutive opens."""
+        with open('/path/to/file', 'r') as _:
+            pass
+
+        mock_open.reset_mock()
+
+        with open('/path/to/file', 'r') as _:
+            pass
+
+        # The key here is that the last three calls objects are `call()`
+        # instead of `call`. This is fixed by setting _new_name.
+        mock_open.assert_has_calls([
+            call('/path/to/file', 'r'),
+            call().__enter__(),
+            call().__exit__(None, None, None),
+            call().close(),
+        ])

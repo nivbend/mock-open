@@ -63,13 +63,13 @@ class FileLikeMock(NonCallableMock):
 
         # Set tell/read/write/etc side effects to access the new contents
         # object.
-        self.tell.side_effect = self.__contents.tell
-        self.seek.side_effect = self.__contents.seek
-        self.read.side_effect = self.__contents.read
-        self.readline.side_effect = self.__contents.readline
-        self.readlines.side_effect = self.__contents.readlines
-        self.write.side_effect = self.__contents.write
-        self.writelines.side_effect = self.__contents.writelines
+        self.tell._mock_wraps = self.__contents.tell
+        self.seek._mock_wraps = self.__contents.seek
+        self.read._mock_wraps = self.__contents.read
+        self.readline._mock_wraps = self.__contents.readline
+        self.readlines._mock_wraps = self.__contents.readlines
+        self.write._mock_wraps = self.__contents.write
+        self.writelines._mock_wraps = self.__contents.writelines
 
     def __iter__(self):
         return iter(self.__contents)

@@ -138,8 +138,6 @@ class TestOpenSingleFiles(unittest.TestCase):
         with open('/path/to/file', 'r') as handle:
             data = handle.read()
 
-        # Make sure the only call logged was to read().
-        handle.write.assert_not_called()
         handle.read.assert_called_once_with()
         self.assertEqual('\n'.join(contents), data)
 
@@ -371,64 +369,34 @@ class TestSideEffects(unittest.TestCase):
             self.assertRaises(IOError, handle.read)
             self.assertRaises(IOError, handle.write, 'Bad write')
 
-    def test_hijack_read(self, mock_open):
-        """Replace the normal read() with a fake one.
-
-        Replacing the side_effect causes the file's inner state to remain
-        unchanged after the call to read().
-        """
-        mock_open.return_value.read.side_effect = lambda: 'Hijacked!'
+    def test_read_return_value(self, mock_open):
+        """Set the return value from read()."""
+        mock_open.return_value.read_data = 'Some text'
+        mock_open.return_value.read.return_value = 'New text'
 
         with open('/path/to/file', 'w') as handle:
             contents = handle.read()
 
-        self.assertEqual('Hijacked!', contents)
-        self.assertEqual(0, handle.tell())
+        self.assertEqual('New text', contents)
 
-    def test_hijack_write(self, mock_open):
-        """Replace the normal write() with a fake one.
+    def test_read_side_effect(self, mock_open):
+        """Add a side effect to read().
 
-        Replacing the side_effect causes the file's inner state to remain
-        unchanged after the call to write().
+        Setting a side_effect can't change the return value.
         """
-        def fake_write(data):
+        def set_sentinal():
             # pylint: disable=missing-docstring
-            contents[0] = data
+            sentinal[0] = True
+
+            # This doesn't work.
+            return 'Text from side_effect'
 
         # If we define contents as a 'simple' variable (just None, for example)
         # the assignment inside fake_write() will assign to a local variable
         # instead of the 'outer' contents variable.
-        contents = [None, ]
-        mock_open.return_value.write.side_effect = fake_write
-
-        with open('/path/to/file', 'r') as handle:
-            handle.write('text')
-
-        self.assertEqual('text', contents[0])
-        self.assertEqual(0, handle.tell())
-
-    def test_wrap_read(self, mock_open):
-        """Wrap the normal read() function to add to regular operations.
-
-        This is a method of allowing the mock to behave normally while adding
-        our own code around operations.
-        """
-        def wrap_read(original_read):
-            # pylint: disable=missing-docstring
-            original_side_effect = original_read.side_effect
-
-            @wraps(original_side_effect)
-            def wrapped_read(*args, **kws):
-                # pylint: disable=missing-docstring
-                sentinal[0] = True
-                return original_side_effect(*args, **kws)
-
-            original_read.side_effect = wrapped_read
-
-        # Avoid uninitialized assignment (see test_hijack_write()).
         sentinal = [False, ]
         mock_open.return_value.read_data = 'Some text'
-        wrap_read(mock_open.return_value.read)
+        mock_open.return_value.read.side_effect = set_sentinal
 
         with open('/path/to/file', 'w') as handle:
             contents = handle.read()
@@ -436,27 +404,15 @@ class TestSideEffects(unittest.TestCase):
         self.assertEqual('Some text', contents)
         self.assertTrue(sentinal[0])
 
-    def test_wrap_write(self, mock_open):
-        """Wrap the normal write() function to add to regular operations.
-
-        This is a method of allowing the mock to behave normally while adding
-        our own code around operations.
-        """
-        def wrap_write(original_write):
+    def test_write_side_effect(self, mock_open):
+        """Add a side effect to write()."""
+        def set_sentinal(data):
             # pylint: disable=missing-docstring
-            original_side_effect = original_write.side_effect
+            sentinal[0] = True
 
-            @wraps(original_side_effect)
-            def wrapped_write(*args, **kws):
-                # pylint: disable=missing-docstring
-                sentinal[0] = True
-                return original_side_effect(*args, **kws)
-
-            original_write.side_effect = wrapped_write
-
-        # Avoid uninitialized assignment (see test_hijack_write()).
+        # Avoid uninitialized assignment (see test_read_side_effect()).
         sentinal = [False, ]
-        wrap_write(mock_open.return_value.write)
+        mock_open.return_value.write.side_effect = set_sentinal
 
         with open('/path/to/file', 'w') as handle:
             handle.write('Some text')

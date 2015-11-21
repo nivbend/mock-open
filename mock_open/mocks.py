@@ -1,16 +1,21 @@
 """Mock classes for open() and the file type."""
 
 import sys
+from io import TextIOWrapper
 
-if sys.version_info < (3, 3):
-    from mock import Mock, NonCallableMock
-else:
+try:
+    # pylint: disable=no-name-in-module
     from unittest.mock import Mock, NonCallableMock
+except ImportError:
+    from mock import Mock, NonCallableMock
 
-if sys.version_info >= (3, 0):
-    from io import TextIOWrapper, StringIO
+if sys.version_info < (3, 0):
+    try:
+        from cStringIO import StringIO
+    except ImportError:
+        from StringIO import StringIO
 else:
-    from io import TextIOWrapper, BytesIO as StringIO
+    from io import StringIO
 
 
 class FileLikeMock(NonCallableMock):

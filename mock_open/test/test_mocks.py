@@ -5,15 +5,16 @@ import unittest
 from functools import wraps
 from ..mocks import MockOpen, FileLikeMock
 
-if sys.version_info < (3, 3):
-    from mock import patch, call, NonCallableMock, DEFAULT
-else:
+try:
+    # pylint: disable=no-name-in-module
     from unittest.mock import patch, call, NonCallableMock, DEFAULT
+except ImportError:
+    from mock import patch, call, NonCallableMock, DEFAULT
 
-if sys.version_info >= (3, 0):
-    OPEN = 'builtins.open'
-else:
+if sys.version_info < (3, 0):
     OPEN = '__builtin__.open'
+else:
+    OPEN = 'builtins.open'
 
 
 @patch(OPEN, new_callable=MockOpen)

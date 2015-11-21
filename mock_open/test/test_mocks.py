@@ -521,6 +521,82 @@ class TestAPI(unittest.TestCase):
                 self.assertEqual('Global', handle.read())
 
 
+class TestModes(unittest.TestCase):
+    """Test different modes behavior."""
+    @staticmethod
+    @patch(OPEN, new_callable=MockOpen)
+    def test_default_mode(mock_open):
+        """Default mode is 'r'."""
+        with open('/path/to/file') as _:
+            pass
+
+        mock_open.assert_called_once_with('/path/to/file', 'r')
+
+    @patch(OPEN, new_callable=MockOpen)
+    def test_open_as_text(self, mock_open):
+        """Read/write to file as text (no 'b')."""
+        with open('/path/to/empty_file', 'r') as handle:
+            contents = handle.read()
+
+        self.assertIsInstance(contents, str)
+        self.assertEqual('', contents)
+
+        mock_open['/path/to/file'].read_data = 'Contents'
+
+        with open('/path/to/file', 'r') as handle:
+            contents = handle.read()
+
+        self.assertIsInstance(contents, str)
+        self.assertEqual('Contents', contents)
+
+        with open('/path/to/file', 'w') as handle:
+            handle.write('New contents')
+
+        self.assertEqual('New contents', handle.read_data)
+
+    @patch(OPEN, new_callable=MockOpen)
+    def test_open_as_binary(self, mock_open):
+        """Read/write to file as binary data (with 'b')."""
+        with open('/path/to/empty_file', 'rb') as handle:
+            contents = handle.read()
+
+        self.assertIsInstance(contents, bytes)
+        self.assertEqual(b'', contents)
+
+        mock_open['/path/to/file'].read_data = b'Contents'
+
+        with open('/path/to/file', 'rb') as handle:
+            contents = handle.read()
+
+        self.assertIsInstance(contents, bytes)
+        self.assertEqual(b'Contents', contents)
+
+        with open('/path/to/file', 'wb') as handle:
+            handle.write(b'New contents')
+
+        self.assertEqual(b'New contents', handle.read_data)
+
+    @patch(OPEN, new_callable=MockOpen)
+    def test_different_opens(self, _):
+        """Open the same file as text/binary."""
+        with open('/path/to/file', 'w') as handle:
+            handle.write('Textual content')
+
+        self.assertIsInstance(handle.read_data, str)
+
+        with open('/path/to/file', 'rb') as handle:
+            contents = handle.read()
+
+        self.assertIsInstance(contents, bytes)
+        self.assertEqual(b'Textual content', contents)
+
+        with open('/path/to/file', 'r') as handle:
+            contents = handle.read()
+
+        self.assertIsInstance(contents, str)
+        self.assertEqual('Textual content', contents)
+
+
 class TestIssues(unittest.TestCase):
     """Test cases related to issues on GitHub.
 

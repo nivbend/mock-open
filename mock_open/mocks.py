@@ -11,11 +11,11 @@ except ImportError:
 
 if sys.version_info < (3, 0):
     try:
-        from cStringIO import StringIO
+        from cStringIO import StringIO, StringIO as BytesIO
     except ImportError:
-        from StringIO import StringIO
+        from StringIO import StringIO, StringIO as BytesIO
 else:
-    from io import StringIO
+    from io import StringIO, BytesIO
 
 
 class FileLikeMock(NonCallableMock):
@@ -23,6 +23,7 @@ class FileLikeMock(NonCallableMock):
     def __init__(self, name=None, read_data='', *args, **kws):
         kws.update({'spec': TextIOWrapper, })
         super(FileLikeMock, self).__init__(*args, **kws)
+        self.mode = None
         self.__is_closed = False
         self.read_data = read_data
         self.close.side_effect = self._close
@@ -51,7 +52,10 @@ class FileLikeMock(NonCallableMock):
     def read_data(self, contents):
         # pylint: disable=missing-docstring
         # pylint: disable=attribute-defined-outside-init
-        self.__contents = StringIO()
+        if isinstance(contents, str):
+            self.__contents = StringIO()
+        else:
+            self.__contents = BytesIO()
 
         # Constructing a cStrinIO object with the input string would result
         # in a read-only object, so we write the contents after construction.
@@ -69,6 +73,22 @@ class FileLikeMock(NonCallableMock):
 
     def __iter__(self):
         return iter(self.__contents)
+
+    def set_properties(self, path, mode):
+        """Set file's properties (name and mode).
+
+        This function is also in charge of swapping between textual and
+        binary streams.
+        """
+        self.name = path
+        self.mode = mode
+
+        if 'b' in self.mode:
+            if not isinstance(self.read_data, bytes):
+                self.read_data = bytes(self.read_data, encoding='utf8')
+        else:
+            if not isinstance(self.read_data, str):
+                self.read_data = str(self.read_data, encoding='utf8')
 
     def reset_mock(self, visited=None):
         """Reset the default tell/read/write/etc side effects."""
@@ -129,9 +149,7 @@ class MockOpen(Mock):
             child = self._get_child_mock(_new_name='()', name=path)
             self.__files[path] = child
 
-        child.name = path
-        # pylint: disable=attribute-defined-outside-init
-        child.mode = mode
+        child.set_properties(path, mode)
 
         if path not in self.__files:
             self.__files[path] = child

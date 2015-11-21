@@ -1,26 +1,36 @@
 """Mock classes for open() and the file type."""
 
 import sys
+from io import TextIOWrapper
 
-if sys.version_info < (3, 3):
-    from mock import Mock, NonCallableMock
-else:
+try:
+    # pylint: disable=no-name-in-module
     from unittest.mock import Mock, NonCallableMock
+except ImportError:
+    from mock import Mock, NonCallableMock
 
-if sys.version_info >= (3, 0):
-    from io import TextIOWrapper, StringIO
+if sys.version_info < (3, 0):
+    try:
+        from cStringIO import StringIO, StringIO as BytesIO
+    except ImportError:
+        from StringIO import StringIO, StringIO as BytesIO
 else:
-    from io import TextIOWrapper, BytesIO as StringIO
+    from io import StringIO, BytesIO
 
 
 class FileLikeMock(NonCallableMock):
     """Acts like a file object returned from open()."""
-    def __init__(self, name=None, read_data="", *args, **kws):
-        kws.update({"spec": TextIOWrapper, })
+    def __init__(self, name=None, read_data='', *args, **kws):
+        kws.update({'spec': TextIOWrapper, })
         super(FileLikeMock, self).__init__(*args, **kws)
+        self.mode = None
         self.__is_closed = False
         self.read_data = read_data
         self.close.side_effect = self._close
+        self.__contents.seek(0)
+
+        self.__enter__ = Mock(side_effect=self._enter)
+        self.__exit__ = Mock(side_effect=self._exit)
 
         if name is not None:
             self.name = name
@@ -42,7 +52,10 @@ class FileLikeMock(NonCallableMock):
     def read_data(self, contents):
         # pylint: disable=missing-docstring
         # pylint: disable=attribute-defined-outside-init
-        self.__contents = StringIO()
+        if isinstance(contents, str):
+            self.__contents = StringIO()
+        else:
+            self.__contents = BytesIO()
 
         # Constructing a cStrinIO object with the input string would result
         # in a read-only object, so we write the contents after construction.
@@ -50,25 +63,32 @@ class FileLikeMock(NonCallableMock):
 
         # Set tell/read/write/etc side effects to access the new contents
         # object.
-        self.tell.side_effect = self.__contents.tell
-        self.seek.side_effect = self.__contents.seek
-        self.read.side_effect = self.__contents.read
-        self.readline.side_effect = self.__contents.readline
-        self.readlines.side_effect = self.__contents.readlines
-        self.write.side_effect = self.__contents.write
-        self.writelines.side_effect = self.__contents.writelines
-
-    def __enter__(self):
-        # Reset the position in buffer (in case we re-opened it).
-        self.__contents.seek(0)
-
-        return self
-
-    def __exit__(self, exception_type, exception, traceback):
-        self.close()
+        self.tell._mock_wraps = self.__contents.tell
+        self.seek._mock_wraps = self.__contents.seek
+        self.read._mock_wraps = self.__contents.read
+        self.readline._mock_wraps = self.__contents.readline
+        self.readlines._mock_wraps = self.__contents.readlines
+        self.write._mock_wraps = self.__contents.write
+        self.writelines._mock_wraps = self.__contents.writelines
 
     def __iter__(self):
         return iter(self.__contents)
+
+    def set_properties(self, path, mode):
+        """Set file's properties (name and mode).
+
+        This function is also in charge of swapping between textual and
+        binary streams.
+        """
+        self.name = path
+        self.mode = mode
+
+        if 'b' in self.mode:
+            if not isinstance(self.read_data, bytes):
+                self.read_data = bytes(self.read_data, encoding='utf8')
+        else:
+            if not isinstance(self.read_data, str):
+                self.read_data = str(self.read_data, encoding='utf8')
 
     def reset_mock(self, visited=None):
         """Reset the default tell/read/write/etc side effects."""
@@ -80,8 +100,19 @@ class FileLikeMock(NonCallableMock):
             super(FileLikeMock, self).reset_mock()
 
         # Reset contents and tell/read/write/close side effects.
-        self.read_data = ""
+        self.read_data = ''
         self.close.side_effect = self._close
+
+    def _enter(self):
+        """Reset the position in buffer whenever entering context."""
+        self.__contents.seek(0)
+
+        return self
+
+    def _exit(self, exception_type, exception, traceback):
+        """Close file when exiting context."""
+        # pylint: disable=unused-argument
+        self.close()
 
     def _close(self):
         """Mark file as closed (used for side_effect)."""
@@ -90,13 +121,13 @@ class FileLikeMock(NonCallableMock):
 
 class MockOpen(Mock):
     """A mock for the open() builtin function."""
-    def __init__(self, read_data="", *args, **kws):
-        kws.update({"spec": open, "name": open.__name__, })
+    def __init__(self, read_data='', *args, **kws):
+        kws.update({'spec': open, 'name': open.__name__, })
         super(MockOpen, self).__init__(*args, **kws)
         self.__files = {}
         self.__read_data = read_data
 
-    def _mock_call(self, path, mode="r", *args, **kws):
+    def _mock_call(self, path, mode='r', *args, **kws):
         original_side_effect = self._mock_side_effect
 
         if path in self.__files:
@@ -115,12 +146,10 @@ class MockOpen(Mock):
         # evident by its name attribute being unset) we create a new file mock
         # instead of returning to previous one.
         if not isinstance(child.name, Mock) and path != child.name:
-            child = self._get_child_mock(name=path)
+            child = self._get_child_mock(_new_name='()', name=path)
             self.__files[path] = child
 
-        child.name = path
-        # pylint: disable=attribute-defined-outside-init
-        child.mode = mode
+        child.set_properties(path, mode)
 
         if path not in self.__files:
             self.__files[path] = child
@@ -144,7 +173,7 @@ class MockOpen(Mock):
             super(MockOpen, self).reset_mock()
 
         self.__files = {}
-        self.__read_data = ""
+        self.__read_data = ''
 
     def _get_child_mock(self, **kws):
         """Create a new FileLikeMock instance.
@@ -153,8 +182,8 @@ class MockOpen(Mock):
         attributes.
         """
         kws.update({
-            "_new_parent": self,
-            "side_effect": self._mock_side_effect,
-            "read_data": self.__read_data,
+            '_new_parent': self,
+            'side_effect': self._mock_side_effect,
+            'read_data': self.__read_data,
         })
         return FileLikeMock(**kws)

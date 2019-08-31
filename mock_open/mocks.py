@@ -5,9 +5,9 @@ from io import TextIOWrapper
 
 try:
     # pylint: disable=no-name-in-module
-    from unittest.mock import Mock, NonCallableMock
+    from unittest.mock import Mock, NonCallableMock, DEFAULT
 except ImportError:
-    from mock import Mock, NonCallableMock
+    from mock import Mock, NonCallableMock, DEFAULT
 
 if sys.version_info < (3, 0):
     try:
@@ -117,6 +117,7 @@ class FileLikeMock(NonCallableMock):
     def _close(self):
         """Mark file as closed (used for side_effect)."""
         self.__is_closed = True
+        return DEFAULT
 
 
 class MockOpen(Mock):

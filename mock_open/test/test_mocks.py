@@ -387,9 +387,7 @@ class TestSideEffects(unittest.TestCase):
         def set_sentinal():
             # pylint: disable=missing-docstring
             sentinal[0] = True
-
-            # This doesn't work.
-            return 'Text from side_effect'
+            return DEFAULT
 
         # If we define contents as a 'simple' variable (just None, for example)
         # the assignment inside fake_write() will assign to a local variable
@@ -409,6 +407,7 @@ class TestSideEffects(unittest.TestCase):
         def set_sentinal(data):
             # pylint: disable=missing-docstring
             sentinal[0] = True
+            return DEFAULT
 
         # Avoid uninitialized assignment (see test_read_side_effect()).
         sentinal = [False, ]

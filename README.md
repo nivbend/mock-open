@@ -1,7 +1,7 @@
 mock-open
 =========
 
-[![GitHub release](https://img.shields.io/github/release/nivbend/mock-open.svg)](https://github.com/nivbend/mock-open/releases/latest)
+[![GitHub release](https://img.shields.io/github/release/nivbend/mock-open.svg)](https://github.com/nivbend/mock-open/releases/latest) [![Build Status](https://travis-ci.org/nivbend/mock-open.svg?branch=master)](https://travis-ci.org/nivbend/mock-open)
 
 A better mock for file I/O.
 

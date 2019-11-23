@@ -128,7 +128,7 @@ class MockOpen(Mock):
         self.__files = {}
         self.__read_data = read_data
 
-    def _mock_call(self, path, mode='r', *args, **kws):
+    def __call__(self, path, mode='r', *args, **kws):
         original_side_effect = self._mock_side_effect
 
         if path in self.__files:
@@ -136,7 +136,7 @@ class MockOpen(Mock):
             self._mock_side_effect = self._mock_return_value.side_effect
 
         try:
-            child = super(MockOpen, self)._mock_call(path, mode, *args, **kws)
+            child = super(MockOpen, self).__call__(path, mode, *args, **kws)
         finally:
             # Reset the side effect after each call so that the next call to
             # open() won't cause the same side_effect.

@@ -80,6 +80,8 @@ class FileLikeMock(NonCallableMock):
         This function is also in charge of swapping between textual and
         binary streams.
         """
+        if mode is None:
+            mode = 'r'
         self.name = path
         self.mode = mode
 
@@ -128,7 +130,7 @@ class MockOpen(Mock):
         self.__files = {}
         self.__read_data = read_data
 
-    def __call__(self, path, mode='r', *args, **kws):
+    def __call__(self, path, mode=None, *args, **kws):
         original_side_effect = self._mock_side_effect
 
         if path in self.__files:
@@ -136,7 +138,10 @@ class MockOpen(Mock):
             self._mock_side_effect = self._mock_return_value.side_effect
 
         try:
-            child = super(MockOpen, self).__call__(path, mode, *args, **kws)
+            if mode is not None:
+                child = super(MockOpen, self).__call__(path, mode, *args, **kws)
+            else:
+                child = super(MockOpen, self).__call__(path, *args, **kws)
         finally:
             # Reset the side effect after each call so that the next call to
             # open() won't cause the same side_effect.

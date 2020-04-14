@@ -250,9 +250,11 @@ class TestMultipleCalls(unittest.TestCase):
         """
         with open('/path/to/file', 'w') as first_handle:
             first_handle.write('Ground control to Major Tom')
+            self.assertEqual('w', first_handle.mode)
 
         with open('/path/to/file', 'r') as second_handle:
             contents = second_handle.read()
+            self.assertEqual('r', second_handle.mode)
 
         self.assertEqual(first_handle, second_handle)
         self.assertEqual('Ground control to Major Tom', contents)
@@ -478,14 +480,14 @@ class TestAPI(unittest.TestCase):
 
 class TestModes(unittest.TestCase):
     """Test different modes behavior."""
-    @staticmethod
     @patch(OPEN, new_callable=MockOpen)
-    def test_default_mode(mock_open):
+    def test_default_mode(self, mock_open):
         """Default mode is 'r'."""
         with open('/path/to/file') as _:
             pass
 
-        mock_open.assert_called_once_with('/path/to/file', 'r')
+        mock_open.assert_called_once_with('/path/to/file')
+        self.assertEqual('r', mock_open.return_value.mode)
 
     @patch(OPEN, new_callable=MockOpen)
     def test_open_as_text(self, mock_open):

@@ -74,6 +74,20 @@ class FileLikeMock(NonCallableMock):
     def __iter__(self):
         return iter(self.__contents)
 
+    def __next__(self):
+        current_position = self.__contents.tell()
+        self._reset_position(0, SEEK_END)
+        eof = self.__contents.tell()
+        if eof <= current_position:
+            raise StopIteration()
+
+        self._reset_position(current_position)
+        return self.readline()
+
+    if sys.version_info < (3, 0):
+        def next(self):
+            return self.__next__()
+
     def set_properties(self, path, mode):
         """Set file's properties (name and mode).
 

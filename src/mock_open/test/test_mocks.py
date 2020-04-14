@@ -206,9 +206,16 @@ class TestOpenSingleFiles(unittest.TestCase):
         ]
 
         mock_open.return_value.read_data = ''.join(contents)
-        with open('/path/to/file', 'r') as handle:
+        with open('/path/to/file') as handle:
             for (i, line) in enumerate(handle):
                 self.assertEqual(contents[i], line)
+
+        # Same thing but using `next`.
+        with open('/path/to/file') as handle:
+            for line in contents:
+                self.assertEqual(line, next(handle))
+            with self.assertRaises(StopIteration):
+                next(handle)
 
     def test_getitem_after_call(self, mock_open):
         """Retrieving a handle after the call to open() should give us the same

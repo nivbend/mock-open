@@ -31,7 +31,7 @@ setup(
     license='MIT',
     packages=find_packages('src'),
     package_dir={ '': 'src', },
-    test_suite='mock_open.test.test_mocks',
+    test_suite='mock_open.test',
     install_requires=DEPENDENCIES,
     classifiers=[
         'Development Status :: 5 - Production/Stable',

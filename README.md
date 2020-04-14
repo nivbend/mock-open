@@ -10,41 +10,48 @@ A better mock for file I/O.
 
 Install
 -------
-
 ```
 $ pip install mock-open
 ```
 
 class `MockOpen`
---------------
+----------------
+The `MockOpen` class should work as a stand-in replacement for [`mock.mock_open`][mock-open] with
+some added features (though it tries to conform to how the builtin `open` works where the two
+differ):
+ * Multiple file support, including a mapping-like access to file mocks by path:
+   ```python
+   from mock_open import MockOpen
+   mock_open = MockOpen()
+   mock_open["/path/to/file"].read_data = "Data from a fake file-like object"
+   mock_open["/path/to/bad_file"].side_effect = IOError()
+   ```
 
-The `MockOpen` class should work as a stand-in replacement for [`mock.mock_open`](http://docs.python.org/3/library/unittest.mock.html#mock-open) with some
-added features:
-* Multiple file support, including a mapping-like access to file mocks by path:
+   You can also configure behavior via the regular `mock` library API:
+   ```python
+   mock_open = MockOpen()
+   mock_open.return_value.write.side_effect = IOError()
+   ```
 
-  ```python
-  from mock_open import MockOpen
-  mock_open = MockOpen()
-  mock_open["/path/to/file"].read_data = "Data from a fake file-like object"
-  mock_open["/path/to/bad_file"].side_effect = IOError()
-  ```
+ * Persistent file contents between calls to `open`:
+   ```python
+   with patch("builtins.open", MockOpen()):
+       with open("/path/to/file", "w") as handle:
+           handle.write("Some text")
 
-  You can also configure behavior via the regular `mock` library API:
+       with open("/path/to/file", "r") as handle:
+           assert "Some text" == handle.read()
+   ```
 
-  ```python
-  mock_open = MockOpen()
-  mock_open.return_value.write.side_effect = IOError()
-  ```
+ * All the regular file operations: `read`, `readline`, `readlines`, `write`, `writelines`, `seek`,
+   `tell`.
 
-* Persistent file contents between calls to `open`:
+Acknowledgements
+----------------
+This library uses modified versions of tests from the [CPython source code][CPython] as part of its
+test suite. The original tests are licensed under the [PSF license agreement][PSF License] and are
+copyright of the Python Software Foundation.
 
-  ```python
-  with patch("builtins.open", MockOpen()):
-      with open("/path/to/file", "w") as handle:
-          handle.write("Some text")
-
-      with open("/path/to/file", "r") as handle:
-          assert "Some text" == handle.read()
-  ```
-
-* All the regular file operations: `read`, `readline`, `readlines`, `write`, `writelines`, `seek`, `tell`.
+[mock-open]: http://docs.python.org/library/unittest.mock.html#mock-open
+[CPython]: https://github.com/python/cpython
+[PSF License]: https://docs.python.org/license.html#terms-and-conditions-for-accessing-or-otherwise-using-python

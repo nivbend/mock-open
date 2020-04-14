@@ -1,6 +1,7 @@
 """Mock classes for open() and the file type."""
 
 import sys
+from os import SEEK_SET, SEEK_END
 from io import TextIOWrapper
 
 try:
@@ -27,7 +28,6 @@ class FileLikeMock(NonCallableMock):
         self.__is_closed = False
         self.read_data = read_data
         self.close.side_effect = self._close
-        self.__contents.seek(0)
 
         self.__enter__ = Mock(side_effect=self._enter)
         self.__exit__ = Mock(side_effect=self._exit)
@@ -105,10 +105,16 @@ class FileLikeMock(NonCallableMock):
         self.read_data = ''
         self.close.side_effect = self._close
 
-    def _enter(self):
-        """Reset the position in buffer whenever entering context."""
-        self.__contents.seek(0)
+    def _reset_position(self, position=0, whence=SEEK_SET):
+        """A shortcut to `_contents`'s `seek` for internal use."""
+        self.__contents.seek(position, whence)
 
+    def _enter(self):
+        """Reset the position in buffer according to the mode whenever entering context."""
+        if 'a' in self.mode:
+            self._reset_position(0, SEEK_END)
+        else:
+            self._reset_position()
         return self
 
     def _exit(self, exception_type, exception, traceback):
@@ -150,7 +156,7 @@ class MockOpen(Mock):
         # Consecutive calls to open() set `return_value` to the last file mock
         # created. If the paths differ (and child isn't a newly-created mock,
         # evident by its name attribute being unset) we create a new file mock
-        # instead of returning to previous one.
+        # instead of returning the previous one.
         if not isinstance(child.name, Mock) and path != child.name:
             child = self._get_child_mock(_new_name='()', name=path)
             self.__files[path] = child
@@ -159,6 +165,12 @@ class MockOpen(Mock):
 
         if path not in self.__files:
             self.__files[path] = child
+
+        # Each call to `open` should reset the position in the file according to the mode.
+        if mode and 'a' in mode:
+            self.__files[path]._reset_position(0, SEEK_END)
+        else:
+            self.__files[path]._reset_position()
 
         self._mock_return_value = child
         return child

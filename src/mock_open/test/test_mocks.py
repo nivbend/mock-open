@@ -297,12 +297,46 @@ class TestMultipleCalls(unittest.TestCase):
         with open('/path/to/second_file', 'r') as handle:
             self.assertEqual(handle, mock_open.return_value)
 
+    def test_multiple_opens(self, mock_open):
+        """Verify position when opening file multiple times."""
+        mock_open.return_value.read_data = 'SOME DATA'
+        with open('/some/file') as first_handle:
+            self.assertEqual(0, first_handle.tell())
+            self.assertEqual('SOME', first_handle.read(4))
+            self.assertEqual(4, first_handle.tell())
+
+        # Open file a second time.
+        with open('/some/file') as second_handle:
+            self.assertEqual(0, second_handle.tell())
+
+        # Open file a third time to append to it.
+        with open('/some/file', 'a') as third_handle:
+            self.assertEqual(9, third_handle.tell())
+
+        # Same thing, but not as a context manager.
+        # TODO: In this case we differ from `open` implementation since all of these handles
+        # are actually the same `FileLikeMock` instance. A better mock would provide multiple
+        # instances.
+        first_handle = open('/some/file')
+        self.assertEqual(0, first_handle.tell())
+        self.assertEqual('SOME', first_handle.read(4))
+        self.assertEqual(4, first_handle.tell())
+
+        second_handle = open('/some/file')
+        self.assertEqual(0, second_handle.tell())
+        self.assertNotEqual(4, first_handle.tell()) # FIXME?
+
+        third_handle = open('/some/file', 'a')
+        self.assertEqual(9, third_handle.tell())
+        self.assertNotEqual(4, first_handle.tell()) # FIXME?
+        self.assertNotEqual(0, second_handle.tell()) # FIXME?
+
 
 @patch(OPEN, new_callable=MockOpen)
 class TestSideEffects(unittest.TestCase):
     """Test setting the side_effect attribute in various situations."""
     def test_error_on_open(self, mock_open):
-        """Simulate error openning a file."""
+        """Simulate error opening a file."""
         mock_open.side_effect = IOError()
 
         self.assertRaises(IOError, open, '/not/there', 'r')
@@ -360,7 +394,7 @@ class TestSideEffects(unittest.TestCase):
         with open('/path/to/allowed_file', 'r'):
             pass
 
-        # But openning the bad file should raise an exception.
+        # But opening the bad file should raise an exception.
         self.assertRaises(IOError, open, '/path/to/error_file', 'r')
 
         # Reset open's side effect and check read/write side effects.

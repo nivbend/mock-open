@@ -1,7 +1,10 @@
 mock-open
 =========
-
-[![GitHub release](https://img.shields.io/github/release/nivbend/mock-open.svg)](https://github.com/nivbend/mock-open/releases/latest) [![Build Status](https://travis-ci.org/nivbend/mock-open.svg?branch=master)](https://travis-ci.org/nivbend/mock-open)
+[![PyPI version](https://badge.fury.io/py/mock-open.svg)](https://pypi.python.org/pypi/mock-open/)
+[![Build Status](https://travis-ci.org/nivbend/mock-open.svg?branch=master)](https://travis-ci.org/nivbend/mock-open)
+[![GitHub license](https://img.shields.io/github/license/nivbend/mock-open.svg)](https://github.com/nivbend/mock-open/blob/master/LICENSE)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/nivbend/mock-open/graphs/commit-activity)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 A better mock for file I/O.
 

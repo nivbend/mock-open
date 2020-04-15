@@ -3,7 +3,7 @@
 import sys
 import unittest
 from functools import wraps
-from ..mocks import MockOpen, FileLikeMock
+from mock_open.mocks import MockOpen, FileLikeMock
 
 try:
     # pylint: disable=no-name-in-module

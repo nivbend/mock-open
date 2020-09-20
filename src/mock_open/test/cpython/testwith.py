@@ -10,7 +10,7 @@
 #    `MockOpen`'s constructor requiring a "path" argument and `FileLikeMock`'s  `__exit__` calling
 #    `close` on the underlying file-like object.
 #
-# Copyright © 2001-2020 Python Software Foundation; All Rights Reserved.
+# Copyright (c) 2001-2020 Python Software Foundation; All Rights Reserved.
 
 import unittest
 from mock_open import MockOpen as mock_open
